@@ -1,0 +1,58 @@
+.control {
+	display: flex;
+	padding: 40rpx 60rpx;
+	justify-content: space-between;
+	align-items: center;
+	box-sizing: border-box;
+}
+
+.direction {
+	width: 180rpx;
+	height: 190rpx;
+	position: relative;
+}
+
+.control-btn {
+	width: 40rpx;
+	height: 60rpx;
+	background: radial-gradient(#4b5a6f 34%, #3c495b 94%);
+	position: absolute;
+	border-bottom-left-radius: 20rpx;
+	border-bottom-right-radius: 20rpx;
+}
+
+.control-top {
+	top: 0;
+	left: 50%;
+	transform: translateX(-50%);
+	box-shadow: 0 2rpx 2rpx rgba(75,90,111,0.7);
+}
+
+.control-left {
+	top: 50%;
+	left: 0;
+	transform: translateY(-50%) rotateZ(-90deg);
+	box-shadow: -1rpx 1rpx 1rpx rgba(75,90,111,0.7);
+}
+
+.control-right {
+	top: 50%;
+	right: 0;
+	transform: translateY(-50%) rotateZ(90deg);
+	box-shadow: 2rpx 2rpx 2rpx rgba(75,90,111,0.7);
+}
+
+.control-bottom {
+	bottom: 0;
+	left: 50%;
+	transform: translateX(-50%) rotateZ(180deg);
+	box-shadow: 0 -1rpx 1rpx rgba(75,90,111,0.7);
+}
+
+.circle-btn {
+	width: 180rpx;
+	height: 180rpx;
+	border-radius: 180rpx;
+	background: radial-gradient(circle, #4b5a6f 34%, #3c495b 94%);
+	box-shadow: 0 4rpx 2rpx rgba(75,90,111,0.7);
+}

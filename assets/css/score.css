@@ -1,0 +1,170 @@
+.default-score {
+	margin: 0 10rpx 0 0;
+}
+.default-score .score {
+	width: 22rpx;
+	height: 18rpx;
+	position: relative;
+}
+.default-score .score::before, .default-score .score::after {
+	content: '';
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	box-sizing: border-box;
+	border-width: 4rpx;
+	border-style: solid;
+}
+.default-score .score::before {
+	width: 100%;
+	height: 80%;
+	border-left-color: #8A9378;
+	border-right-color: #8A9378;
+	border-top-color: transparent;
+	border-bottom-color: transparent;
+}
+.default-score .score::after {
+	width: 80%;
+	height: 100%;
+	border-left-color: transparent;
+	border-right-color: transparent;
+}
+.default-score .score-top::after {
+	border-top-color: #8A9378;
+	border-bottom-color: #8A9378;
+	border-bottom-width: 2rpx;
+}
+.default-score .score-bottom::after {
+	border-top-color: #8A9378;
+	border-bottom-color: #8A9378;
+	border-top-width: 2rpx;
+}
+
+/* 0 */
+.score_0 .score-top::before {
+	border-left-color: #030504;
+	border-right-color: #030504;
+}
+.score_0 .score-top::after {
+	border-top-color: #030504;
+}
+.score_0 .score-bottom::before {
+	border-left-color: #030504;
+	border-right-color: #030504;
+}
+.score_0 .score-bottom::after {
+	border-bottom-color: #030504;
+}
+
+/* 1 */
+.score_1 .score-top::before, .score_1 .score-bottom::before {
+	border-right-color: #030504;
+}
+
+/* 2 */
+.score_2 .score-top::before {
+	border-right-color: #030504;
+}
+.score_2 .score-top::after {
+	border-top-color: #030504;
+	border-bottom-color: #030504;
+}
+.score_2 .score-bottom::before {
+	border-left-color: #030504;
+}
+.score_2 .score-bottom::after {
+	border-top-color: #030504;
+	border-bottom-color: #030504;
+}
+
+/* 3 */
+.score_3 .score-top::before, .score_3 .score-bottom::before {
+	border-right-color: #030504;
+}
+.score_3 .score-top::after, .score_3 .score-bottom::after {
+	border-top-color: #030504;
+	border-bottom-color: #030504;
+}
+
+/* 4 */
+.score_4 .score-top::before {
+	border-left-color: #030504;
+	border-right-color: #030504;
+}
+.score_4 .score-top::after {
+	border-bottom-color: #030504;
+}
+.score_4 .score-bottom::after {
+	border-top-color: #030504;
+}
+.score_4 .score-bottom::before {
+	border-right-color: #030504;
+}
+
+/* 5 */
+.score_5 .score-top::before {
+	border-left-color: #030504;
+}
+.score_5 .score-top::after {
+	border-top-color: #030504;
+	border-bottom-color: #030504;
+}
+.score_5 .score-bottom::before {
+	border-right-color: #030504;
+}
+.score_5 .score-bottom::after {
+	border-top-color: #030504;
+	border-bottom-color: #030504;
+}
+
+/* 6 */
+.score_6 .score-top::before {
+	border-left-color: #030504;
+}
+.score_6 .score-top::after {
+	border-top-color: #030504;
+	border-bottom-color: #030504;
+}
+.score_6 .score-bottom::before {
+	border-left-color: #030504;
+	border-right-color: #030504;
+}
+.score_6 .score-bottom::after {
+	border-top-color: #030504;
+	border-bottom-color: #030504;
+}
+
+/* 7 */
+.score_7 .score-top::before {
+	border-right-color: #030504;
+}
+.score_7 .score-top::after {
+	border-top-color: #030504;
+}
+.score_7 .score-bottom::before {
+	border-right-color: #030504;
+}
+
+/* 8 */
+.score_8 .score-top::before, .score_8 .score-bottom::before {
+	border-left-color: #030504;
+	border-right-color: #030504;
+}
+.score_8 .score-top::after, .score_8 .score-bottom::after {
+	border-top-color: #030504;
+	border-bottom-color: #030504;
+}
+
+/* 9 */
+.score_9 .score-top::before {
+	border-left-color: #030504;
+	border-right-color: #030504;
+}
+.score_9 .score-top::after, .score_9 .score-bottom::after {
+	border-top-color: #030504;
+	border-bottom-color: #030504;
+}
+.score_9 .score-bottom::before {
+	border-right-color: #030504;
+}
