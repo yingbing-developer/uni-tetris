@@ -41,16 +41,22 @@
 						</view>
 					</view>
 				</view>
-				<view class="game-btn" @tap="startGame">
+				<view class="game-btn" @tap="startGame" v-if="ended">
 					<span>开始游戏</span>
+				</view>
+				<view class="game-btn" @tap="endGame" v-if="!ended">
+					<span>结束游戏</span>
+				</view>
+				<view class="game-btn" @tap="pauseGame" v-if="!ended && !pause">
+					<span>暂停游戏</span>
 				</view>
 			</view>
 		</view>
 		<view class="control">
 			<view class="direction">
 				<view class="control-btn control-top"></view>
-				<view class="control-btn control-left"></view>
-				<view class="control-btn control-right"></view>
+				<view class="control-btn control-left" @tap="left"></view>
+				<view class="control-btn control-right" @tap="right"></view>
 				<view class="control-btn control-bottom"></view>
 			</view>
 			<view class="circle-btn"></view>
@@ -60,6 +66,7 @@
 
 <script>
 	import Score from '@/components/score/score.vue';
+	import { deepClone } from '@/assets/js/utils.js';
 	//展示用方块
 	const nextBlocks = [
 		[0x0660],//粉碎男孩
@@ -84,24 +91,30 @@
 	export default {
 		data() {
 			return {
-				//游戏世界地图
+				//绘制的游戏世界（给玩家看的游戏世界）
 				worldData: [],
+				//真实的游戏世界
+				oldWorldData: [],
 				//展示方块地图
 				nextData: [],
 				//当前方块
 				nowBlock: '',
 				//下个方块
 				nextBlock: '',
+				//方块是否完整展示在游戏地图上，用于判断游戏是否失败
+				isShowAll: false,
 				position: {
 					x: 3,
 					y: -1
 				},
 				//消除行数
 				lines: 0,
+				
 				//是否暂停游戏
 				pause: false,
 				//是否结束游戏
 				ended: true,
+				//游戏失败
 				error: false
 			}
 		},
@@ -109,24 +122,18 @@
 			this.init();
 		},
 		computed: {
+			//方块下降时间
 			downTime () {
 				let time = 1000 - (this.level * 50);
 				return time > 40 ? time : 40;
 			},
+			//等级
 			level () {
 				return Math.floor(this.lines / 10); 
 			},
+			//分数
 			score () {
 				return this.lines * 10;
-			},
-			nowBlockSync () {
-				let nowBlock = this.scale2Arr(this.nowBlock);
-				for ( let i in nowBlock ) {
-					nowBlock[i] = new Array(this.position.x).fill(0).concat(nowBlock[i]);
-					nowBlock[i] = nowBlock[i].concat(new Array(10 - (this.position.x + 4)).fill(0));
-				}
-				nowBlock = new Array(16).fill(new Array(10).fill(0)).concat(nowBlock);
-				return nowBlock;
 			}
 		},
 		methods: {
@@ -139,7 +146,8 @@
 						worldData[i].push(0)
 					}
 				}
-				this.worldData = worldData;
+				this.worldData = deepClone(worldData);
+				this.oldWorldData = deepClone(worldData);
 				this.nextData = this.scale2Arr();
 			},
 			//16进制转2维数组
@@ -153,17 +161,20 @@
 				return arr;
 			},
 			//随机方块
-			randomBlock (blocks) {
+			randomBlock () {
 				let index = ~~(Math.random() * 7);
 				let direction = ~~(Math.random() * nextBlocks[index].length);
-				return blocks[index][direction];
+				return {
+					index: index,
+					direction: direction
+				};
 			},
 			//开始游戏
 			startGame () {
 				this.ended = false;
-				this.nowBlock = this.nextBlock || this.randomBlock(BLOCKS);
-				this.nextBlock = this.randomBlock(nextBlocks);
-				this.nextData = this.scale2Arr(this.nextBlock);
+				this.nowBlock = this.nextBlock || this.randomBlock();
+				this.nextBlock = this.randomBlock();
+				this.nextData = this.scale2Arr(nextBlocks[this.nextBlock.index][this.nextBlock.direction]);
 				this.position = {
 					x: 3,
 					y: -1
@@ -182,29 +193,87 @@
 			//暂停游戏
 			pauseGame () {
 				this.pause = true;
+				clearTimeout(this.downTimer);
+				uni.showModal({
+					title: '提示',
+					content: '游戏暂停',
+					showCancel: false,
+					confirmText: '继续游戏',
+					success: (res) => {
+						if (res.confirm) {
+							this.pause = false;
+							this.downTimer = setTimeout(() => {
+								this.down();
+							}, this.downTime)
+						}
+					}
+				})
 			},
-			//继续游戏
-			continueGame () {
-				this.pause = false;
+			//删除方块多余的空白行
+			deleteRow (arr) {
+				let len = arr.length;
+				let nowBlock = [];
+				for ( let i = 0; i < len; i++) {
+					let value = 0;
+					for ( let j in arr[i] ) {
+						value += parseInt(arr[i][j]);
+					}
+					if ( value > 0 ) {
+						let left = this.position.x - (value - 1) > 0 ? (this.position.x - (value - 1)) : 0;
+						let obj = new Array(left).fill(0).concat(new Array(value).fill(1));
+						obj = obj.concat(new Array(10 - (left + value)).fill(0));
+						nowBlock.push(obj);
+					}
+				}
+				return nowBlock;
+			},
+			//生成当前方块 10 X 20 地图
+			getNowBlock () {
+				let arr = this.scale2Arr(BLOCKS[this.nowBlock.index][this.nowBlock.direction]);
+				let nowBlock = this.deleteRow(arr);
+				let len = nowBlock.length;
+				let y = this.position.y - (len - 1) > 0 ? (this.position.y - (len - 1)) : 0;
+				for ( let i = 0; i < len; i++ ) {
+					if ( i < len - this.position.y - 1 ) {
+						nowBlock.splice(i, 1);
+					}
+				}
+				//判断方块是否完整展示在地图上
+				this.isShowAll = len == nowBlock.length;
+				len = nowBlock.length;
+				nowBlock = new Array(y).fill(new Array(10).fill(0)).concat(nowBlock);
+				nowBlock = nowBlock.concat(new Array(20 - (y + len)).fill(new Array(10).fill(0)));
+				return nowBlock;
 			},
 			//方块下落
 			down () {
 				this.position.y++;
-				for ( let i = 19; i >= 0; i-- ) {
-					let y = this.position.y - (19 - i);
-					let isBreak = false;
-					if ( y >= 0 && !isBreak ) {
-						for ( let j in this.nowBlockSync[i] ) {
-							this.$set(this.worldData[y], j, this.worldData[y][j] | this.nowBlockSync[i][j]);
-							if ( i == 3 ) {
-								if ( this.worldData[y][j] == 1 && this.nowBlockSync[i][j] == 1 ) {
-									isBreak = true;
-									break;
-								}
+				let nowBlock = this.getNowBlock();
+				let next = false;
+				//判断方块有没有遇到阻挡
+				for ( let i in nowBlock ) {
+					for ( let j in nowBlock[i] ) {
+						if ( this.oldWorldData[i][j] == 1 && nowBlock[i][j] == 1 ) {
+							if ( this.isShowAll ) {
+								//如果遇到阻挡，且方块完整展示在地图上，则开始下一个方块下落
+								next = true;
+							} else {
+								//如果遇到阻挡，且方块没有完整展示在地图上，则游戏失败
+								this.error = true;
 							}
+							break;
 						}
-					} else {
+					}
+					if ( next ) {
 						break;
+					}
+				}
+				//没有遇到阻挡才将下移的方块绘制到地图上
+				if ( !next && !this.error ) {
+					for ( let i in nowBlock ) {
+						for ( let j in nowBlock[i] ) {
+							this.$set(this.worldData[i], j, this.oldWorldData[i][j] | nowBlock[i][j]);
+						}
 					}
 				}
 				if ( this.error ) {
@@ -222,27 +291,25 @@
 					uni.showToast({
 						title: '游戏结束'
 					})
+					this.endGame();
 				} else if ( this.pause ) {
-					uni.showModal({
-						title: '提示',
-						content: '游戏暂停',
-						showCancel: false,
-						confirmText: '继续游戏',
-						success: (res) => {
-							if (res.confirm) {
-								this.downTimer = setTimeout(() => {
-									this.down();
-								}, this.downTime)
-							}
-						}
-					})
-				} else if (this.position.y == 19) {
+					return;
+				} else if (this.position.y == 19 || next) {
+					this.oldWorldData = deepClone(this.worldData);
 					this.startGame();
 				} else {
 					this.downTimer = setTimeout(() => {
 						this.down();
 					}, this.downTime)
 				}
+			},
+			//左移方块
+			left () {
+				this.position.x = this.position.x - 1 > 0 ? this.position.x - 1 : 0;
+			},
+			//左移方块
+			right () {
+				this.position.x = this.position.x + 1 < 9 ? this.position.x + 1 : 9;
 			}
 		},
 		components: {
@@ -273,7 +340,6 @@
 	display: flex;
 	flex-direction: column;
 	justify-content: space-between;
-	width: 480rpx;
 	height: 960rpx;
 }
 
