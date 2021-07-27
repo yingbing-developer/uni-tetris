@@ -113,18 +113,18 @@
 	
 	/* 2 */
 	.score_2 .score-top::before {
-		border-right-color: #030504;
+		border-right-color: #8A9378;
 	}
 	.score_2 .score-top::after {
-		border-top-color: #030504;
-		border-bottom-color: #030504;
+		border-top-color: #8A9378;
+		border-bottom-color: #8A9378;
 	}
 	.score_2 .score-bottom::before {
-		border-left-color: #030504;
+		border-left-color: #8A9378;
 	}
 	.score_2 .score-bottom::after {
-		border-top-color: #030504;
-		border-bottom-color: #030504;
+		border-top-color: #8A9378;
+		border-bottom-color: #8A9378;
 	}
 	
 	/* 3 */

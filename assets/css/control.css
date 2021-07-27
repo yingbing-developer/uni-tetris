@@ -7,18 +7,18 @@
 }
 
 .direction {
-	width: 180rpx;
-	height: 190rpx;
+	width: 220rpx;
+	height: 230rpx;
 	position: relative;
 }
 
 .control-btn {
-	width: 40rpx;
-	height: 60rpx;
+	width: 60rpx;
+	height: 80rpx;
 	background: radial-gradient(#4b5a6f 34%, #3c495b 94%);
 	position: absolute;
-	border-bottom-left-radius: 20rpx;
-	border-bottom-right-radius: 20rpx;
+	border-bottom-left-radius: 30rpx;
+	border-bottom-right-radius: 30rpx;
 }
 
 .control-top {

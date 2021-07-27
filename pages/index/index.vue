@@ -12,6 +12,14 @@
 						HI-SCORE
 					</view>
 					<view id="hiscore" class="score-line">
+						<score :value="hiScore"></score>
+					</view>
+				</view>
+				<view class="game-score">
+					<view class="score-title">
+						NOW-SCORE
+					</view>
+					<view id="hiscore" class="score-line">
 						<score :value="score"></score>
 					</view>
 				</view>
@@ -54,12 +62,12 @@
 		</view>
 		<view class="control">
 			<view class="direction">
-				<view class="control-btn control-top"></view>
+				<view class="control-btn control-top" @tap="changeBlock"></view>
 				<view class="control-btn control-left" @tap="left"></view>
 				<view class="control-btn control-right" @tap="right"></view>
-				<view class="control-btn control-bottom"></view>
+				<view class="control-btn control-bottom" @tap="drop"></view>
 			</view>
-			<view class="circle-btn"></view>
+			<view class="circle-btn" @tap="quickDrop"></view>
 		</view>
 	</view>
 </template>
@@ -67,8 +75,9 @@
 <script>
 	import Score from '@/components/score/score.vue';
 	import { deepClone } from '@/assets/js/utils.js';
+	import { mapGetters, mapMutations } from 'vuex';
 	//展示用方块
-	const nextBlocks = [
+	const NEXTBLOCKS = [
 		[0x0660],//粉碎男孩
 		[0x4444, 0x0F00],//英雄
 		[0x4460, 0x2e0, 0x6220, 0x740],//橙色瑞克
@@ -79,14 +88,49 @@
 	]
 	
 	//游戏用方块
+	// const BLOCKS = [
+	// 	[0x6600],//粉碎男孩
+	// 	[0x2222, 0xf00],//英雄
+	// 	[0x4460, 0x2e0, 0x6220, 0x740],//橙色瑞克
+	// 	[0x2260, 0xe20, 0x6440, 0x4700],//蓝色瑞克
+	// 	[0x6c00, 0x4620],//罗德岛Z
+	// 	[0x2640, 0xc600],//克利夫兰Z
+	// 	[0x2620, 0x720, 0x2320, 0x2700]//小T
+	// ];
 	const BLOCKS = [
-		[0x6600],//粉碎男孩
-		[0x2222, 0xf00],//英雄
-		[0x4460, 0x2e0, 0x6220, 0x740],//橙色瑞克
-		[0x2260, 0xe20, 0x6440, 0x4700],//蓝色瑞克
-		[0x6c00, 0x4620],//罗德岛Z
-		[0x2640, 0xc600],//克利夫兰Z
-		[0x2620, 0x720, 0x2320, 0x2700]//小T
+		[
+			[[1,1],[1,1]],
+		],//粉碎男孩
+		[
+			[[1],[1],[1],[1]],
+			[[1,1,1,1]],
+		],//英雄
+		[
+			[[0,1],[0,1],[1,1]],
+			[[1,0,0],[1,1,1]],
+			[[1,1],[1,0],[1,0]],
+			[[1,1,1],[0,0,1]],
+		],//橙色瑞克
+		[
+			[[1,0],[1,0],[1,1]],
+			[[1,1,1],[1,0,0]],
+			[[1,1],[0,1],[0,1]],
+			[[0,0,1],[1,1,1]],
+		],//蓝色瑞克
+		[
+			[[1,1,0],[0,1,1]],
+			[[0,1],[1,1],[1,0]],
+		],//罗德岛Z
+		[
+			[[1,0],[1,1],[0,1]],
+			[[0,1,1],[1,1,0]],
+		],//克利夫兰Z
+		[
+			[[1,0],[1,1],[1,0]],
+			[[1,1,1],[0,1,0]],
+			[[0,1],[1,1],[0,1]],
+			[[0,1,0],[1,1,1]],
+		]//小T
 	];
 	export default {
 		data() {
@@ -122,6 +166,7 @@
 			this.init();
 		},
 		computed: {
+			...mapGetters(['getHiScore']),
 			//方块下降时间
 			downTime () {
 				let time = 1000 - (this.level * 50);
@@ -134,9 +179,14 @@
 			//分数
 			score () {
 				return this.lines * 10;
+			},
+			//最高分数
+			hiScore () {
+				return this.getHiScore;
 			}
 		},
 		methods: {
+			...mapMutations(['setHiScore']),
 			//初始化地图数据
 			init () {
 				let worldData = [];
@@ -163,7 +213,7 @@
 			//随机方块
 			randomBlock () {
 				let index = ~~(Math.random() * 7);
-				let direction = ~~(Math.random() * nextBlocks[index].length);
+				let direction = ~~(Math.random() * NEXTBLOCKS[index].length);
 				return {
 					index: index,
 					direction: direction
@@ -173,20 +223,24 @@
 			startGame () {
 				this.ended = false;
 				this.nowBlock = this.nextBlock || this.randomBlock();
+				// this.nowBlock = {
+				// 	index: 2,
+				// 	direction: 0
+				// };
 				this.nextBlock = this.randomBlock();
-				this.nextData = this.scale2Arr(nextBlocks[this.nextBlock.index][this.nextBlock.direction]);
+				this.nextData = this.scale2Arr(NEXTBLOCKS[this.nextBlock.index][this.nextBlock.direction]);
 				this.position = {
-					x: 3,
+					x: 5,
 					y: -1
 				}
-				this.downTimer = setTimeout(() => {
-					this.down();
-				}, this.downTime)
+				this.down();
 			},
 			//结束游戏
 			endGame () {
 				this.pause = false;
+				this.error = false;
 				this.ended = true;
+				this.lines = 0;
 				clearTimeout(this.downTimer);
 				this.init();
 			},
@@ -209,54 +263,52 @@
 					}
 				})
 			},
-			//删除方块多余的空白行
-			deleteRow (arr) {
+			//补全方块横向到10位
+			completionColumn (arr, positionX) {
 				let len = arr.length;
 				let nowBlock = [];
+				let maxLen = arr[0].length;
+				//根据positionX计算出方块横向位置
 				for ( let i = 0; i < len; i++) {
-					let value = 0;
-					for ( let j in arr[i] ) {
-						value += parseInt(arr[i][j]);
-					}
-					if ( value > 0 ) {
-						let left = this.position.x - (value - 1) > 0 ? (this.position.x - (value - 1)) : 0;
-						let obj = new Array(left).fill(0).concat(new Array(value).fill(1));
-						obj = obj.concat(new Array(10 - (left + value)).fill(0));
-						nowBlock.push(obj);
-					}
+					let x = positionX - (maxLen - 1) > 0 ? (positionX - (maxLen - 1)) : 0;
+					let obj = new Array(x).fill(0).concat(arr[i]);
+					obj = obj.concat(new Array(10 - (x + maxLen)).fill(0));
+					nowBlock.push(obj);
 				}
 				return nowBlock;
 			},
 			//生成当前方块 10 X 20 地图
-			getNowBlock () {
-				let arr = this.scale2Arr(BLOCKS[this.nowBlock.index][this.nowBlock.direction]);
-				let nowBlock = this.deleteRow(arr);
+			getNowBlock (positionX, direction) {
+				let arr = BLOCKS[this.nowBlock.index][direction];
+				let nowBlock = this.completionColumn(arr, positionX);
 				let len = nowBlock.length;
 				let y = this.position.y - (len - 1) > 0 ? (this.position.y - (len - 1)) : 0;
-				for ( let i = 0; i < len; i++ ) {
-					if ( i < len - this.position.y - 1 ) {
-						nowBlock.splice(i, 1);
-					}
-				}
+				//刚开始下落要截取方块一部分显示
+				let start = len - (this.position.y + 1) > 0 ? len - (this.position.y + 1) : 0;
+				nowBlock = nowBlock.slice(start, len);
 				//判断方块是否完整展示在地图上
 				this.isShowAll = len == nowBlock.length;
+				//补全方块竖向到20位
 				len = nowBlock.length;
 				nowBlock = new Array(y).fill(new Array(10).fill(0)).concat(nowBlock);
 				nowBlock = nowBlock.concat(new Array(20 - (y + len)).fill(new Array(10).fill(0)));
 				return nowBlock;
 			},
 			//方块下落
-			down () {
+			down (isQuick = false) {
+				if ( this.ended ) {
+					return;
+				}
 				this.position.y++;
-				let nowBlock = this.getNowBlock();
-				let next = false;
+				let nowBlock = this.getNowBlock(this.position.x, this.nowBlock.direction);
+				let isBlock = false;
 				//判断方块有没有遇到阻挡
 				for ( let i in nowBlock ) {
 					for ( let j in nowBlock[i] ) {
 						if ( this.oldWorldData[i][j] == 1 && nowBlock[i][j] == 1 ) {
 							if ( this.isShowAll ) {
 								//如果遇到阻挡，且方块完整展示在地图上，则开始下一个方块下落
-								next = true;
+								isBlock = true;
 							} else {
 								//如果遇到阻挡，且方块没有完整展示在地图上，则游戏失败
 								this.error = true;
@@ -264,19 +316,23 @@
 							break;
 						}
 					}
-					if ( next ) {
+					if ( isBlock ) {
 						break;
 					}
 				}
 				//没有遇到阻挡才将下移的方块绘制到地图上
-				if ( !next && !this.error ) {
+				if ( !isBlock && !this.error ) {
 					for ( let i in nowBlock ) {
 						for ( let j in nowBlock[i] ) {
 							this.$set(this.worldData[i], j, this.oldWorldData[i][j] | nowBlock[i][j]);
 						}
 					}
 				}
-				if ( this.error ) {
+				if ( this.error ) {//方块超出界面游戏失败
+					//如果当前游戏分数大于最高记录分数。则更新最高记录分数
+					if ( this.score > this.hiScore ) {
+						this.setHiScore(this.score);
+					}
 					uni.showModal({
 						title: '提示',
 						content: '游戏结束',
@@ -287,17 +343,21 @@
 							}
 						}
 					})
-				} else if ( this.ended ) {
-					uni.showToast({
-						title: '游戏结束'
-					})
-					this.endGame();
-				} else if ( this.pause ) {
+				} else if ( this.ended ) {//用户主动结束游戏
 					return;
-				} else if (this.position.y == 19 || next) {
-					this.oldWorldData = deepClone(this.worldData);
-					this.startGame();
-				} else {
+				} else if ( this.pause ) {//用户暂停游戏
+					return;
+				} else if (this.position.y == 19 || isBlock) {//方块停止，继续降落下一个方块
+					this.downTimer = setTimeout(() => {
+						let worldData = this.worldData.filter(item => item.toString().replace(/,/g, '') != '1111111111');
+						this.lines +=( this.worldData.length - worldData.length);
+						this.worldData = deepClone(new Array (this.worldData.length - worldData.length).fill(new Array(10).fill(0)).concat(worldData));
+						this.oldWorldData = deepClone(this.worldData);
+						this.startGame();
+					}, this.downTime)
+				} else if ( isQuick ) {//用户选择快速降落方块
+					this.down(true);
+				} else {//默认速度降落方块
 					this.downTimer = setTimeout(() => {
 						this.down();
 					}, this.downTime)
@@ -305,11 +365,92 @@
 			},
 			//左移方块
 			left () {
-				this.position.x = this.position.x - 1 > 0 ? this.position.x - 1 : 0;
+				this.move(-1);
 			},
 			//左移方块
 			right () {
-				this.position.x = this.position.x + 1 < 9 ? this.position.x + 1 : 9;
+				this.move(1);
+			},
+			//手动降落方块
+			drop () {
+				if ( this.position.y == 19 ) {
+					return;
+				}
+				clearTimeout(this.downTimer);
+				this.down();
+			},
+			//快速降落方块
+			quickDrop () {
+				if ( this.position.y == 19 ) {
+					return;
+				}
+				clearTimeout(this.downTimer);
+				this.down(true);
+			},
+			//切换方块
+			changeBlock () {
+				let maxLen = BLOCKS[this.nowBlock.index].length;
+				let direction = this.nowBlock.direction + 1 < maxLen ? this.nowBlock.direction + 1 : 0;
+				let nowBlock = this.getNowBlock(this.position.x, direction);
+				//是否被挡住
+				let isBlock = false;
+				//判断方块移动时有没有遇到阻挡
+				for ( let i in nowBlock ) {
+					for ( let j in nowBlock[i] ) {
+						if ( this.oldWorldData[i][j] == 1 && nowBlock[i][j] == 1 ) {
+							isBlock = true;
+							break;
+						}
+					}
+					if ( isBlock ) {
+						break;
+					}
+				}
+				//没有遇到阻挡才将变化的方块绘制到地图上
+				if ( !isBlock && !this.error ) {
+					this.nowBlock.direction = direction;
+					for ( let i in nowBlock ) {
+						for ( let j in nowBlock[i] ) {
+							this.$set(this.worldData[i], j, this.oldWorldData[i][j] | nowBlock[i][j]);
+						}
+					}
+				}
+			},
+			//移动方块
+			move (x) {
+				if ( this.ended ) {
+					return;
+				}
+				let positionX = 0;
+				if ( x < 0 ) {
+					positionX = this.position.x + x > 0 ? (this.position.x + x) : 0;
+				} else {
+					positionX = this.position.x + x < 9 ? (this.position.x + x) : 9;
+				}
+				let nowBlock = this.getNowBlock(positionX, this.nowBlock.direction);
+				//是否被挡住
+				let isBlock = false;
+				//判断方块移动时有没有遇到阻挡
+				for ( let i in nowBlock ) {
+					for ( let j in nowBlock[i] ) {
+						if ( this.oldWorldData[i][j] == 1 && nowBlock[i][j] == 1 ) {
+							isBlock = true;
+							break;
+						}
+					}
+					if ( isBlock ) {
+						break;
+					}
+				}
+				//没有遇到阻挡才将移动的方块绘制到地图上
+				if ( !isBlock && !this.error ) {
+					this.position.x = positionX;
+					for ( let i in nowBlock ) {
+						for ( let j in nowBlock[i] ) {
+							this.$set(this.worldData[i], j, this.oldWorldData[i][j] | nowBlock[i][j]);
+						}
+					}
+				}
 			}
 		},
 		components: {

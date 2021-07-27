@@ -1,0 +1,1 @@
+export const HISCORE = 'UNI_TETRIS_SCORE';
