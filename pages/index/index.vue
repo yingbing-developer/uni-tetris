@@ -290,6 +290,24 @@
 				nowBlock = nowBlock.concat(new Array(20 - (y + len)).fill(new Array(10).fill(0)));
 				return nowBlock;
 			},
+			//判断方块有没有遇到阻挡
+			isBlock (nowBlock) {
+				for ( let i in nowBlock ) {
+					for ( let j in nowBlock[i] ) {
+						if ( this.oldWorldData[i][j] == 1 && nowBlock[i][j] == 1 ) {
+							return true;
+						}
+					}
+				}
+			},
+			//绘制方块到地图上
+			drawWorld (nowBlock) {
+				for ( let i in nowBlock ) {
+					for ( let j in nowBlock[i] ) {
+						this.$set(this.worldData[i], j, this.oldWorldData[i][j] | nowBlock[i][j]);
+					}
+				}
+			},
 			//方块下落
 			down (isQuick = false) {
 				if ( this.ended ) {
@@ -297,32 +315,15 @@
 				}
 				this.position.y++;
 				let nowBlock = this.getNowBlock(this.position.x, this.nowBlock.direction);
-				let isBlock = false;
-				//判断方块有没有遇到阻挡
-				for ( let i in nowBlock ) {
-					for ( let j in nowBlock[i] ) {
-						if ( this.oldWorldData[i][j] == 1 && nowBlock[i][j] == 1 ) {
-							if ( this.isShowAll ) {
-								//如果遇到阻挡，且方块完整展示在地图上，则开始下一个方块下落
-								isBlock = true;
-							} else {
-								//如果遇到阻挡，且方块没有完整展示在地图上，则游戏失败
-								this.error = true;
-							}
-							break;
-						}
+				let isBlock = this.isBlock(nowBlock);
+				if ( isBlock ) {
+					if ( !this.isShowAll ) {
+						//如果遇到阻挡，且方块没有完整展示在地图上，则游戏失败
+						this.error = true;
 					}
-					if ( isBlock ) {
-						break;
-					}
-				}
-				//没有遇到阻挡才将下移的方块绘制到地图上
-				if ( !isBlock && !this.error ) {
-					for ( let i in nowBlock ) {
-						for ( let j in nowBlock[i] ) {
-							this.$set(this.worldData[i], j, this.oldWorldData[i][j] | nowBlock[i][j]);
-						}
-					}
+				} else {
+					//没有遇到阻挡才将下移的方块绘制到地图上
+					this.drawWorld(nowBlock);
 				}
 				if ( this.error ) {//方块超出界面游戏失败
 					//如果当前游戏分数大于最高记录分数。则更新最高记录分数
@@ -344,6 +345,7 @@
 				} else if ( this.pause ) {//用户暂停游戏
 					return;
 				} else if (this.position.y >= 19 || isBlock) {//方块停止，继续降落下一个方块
+					//非快速下降，需要等待一段时间后再进行下一次方块下降 （方便玩家做骚操作）
 					if ( !isQuick ) {
 						this.downTimer = setTimeout(() => {
 							this.next();
@@ -394,28 +396,12 @@
 				let maxLen = BLOCKS[this.nowBlock.index].length;
 				let direction = this.nowBlock.direction + 1 < maxLen ? this.nowBlock.direction + 1 : 0;
 				let nowBlock = this.getNowBlock(this.position.x, direction);
-				//是否被挡住
-				let isBlock = false;
 				//判断方块切换时有没有遇到阻挡
-				for ( let i in nowBlock ) {
-					for ( let j in nowBlock[i] ) {
-						if ( this.oldWorldData[i][j] == 1 && nowBlock[i][j] == 1 ) {
-							isBlock = true;
-							break;
-						}
-					}
-					if ( isBlock ) {
-						break;
-					}
-				}
+				let isBlock = this.isBlock(nowBlock);
 				//没有遇到阻挡才将变化的方块绘制到地图上
-				if ( !isBlock && !this.error ) {
+				if ( !isBlock ) {
 					this.nowBlock.direction = direction;
-					for ( let i in nowBlock ) {
-						for ( let j in nowBlock[i] ) {
-							this.$set(this.worldData[i], j, this.oldWorldData[i][j] | nowBlock[i][j]);
-						}
-					}
+					this.drawWorld(nowBlock);
 				}
 			},
 			//移动方块
@@ -430,28 +416,12 @@
 					positionX = this.position.x + x < 9 ? (this.position.x + x) : 9;
 				}
 				let nowBlock = this.getNowBlock(positionX, this.nowBlock.direction);
-				//是否被挡住
-				let isBlock = false;
 				//判断方块移动时有没有遇到阻挡
-				for ( let i in nowBlock ) {
-					for ( let j in nowBlock[i] ) {
-						if ( this.oldWorldData[i][j] == 1 && nowBlock[i][j] == 1 ) {
-							isBlock = true;
-							break;
-						}
-					}
-					if ( isBlock ) {
-						break;
-					}
-				}
+				let isBlock = this.isBlock(nowBlock);
 				//没有遇到阻挡才将移动的方块绘制到地图上
-				if ( !isBlock && !this.error ) {
+				if ( !isBlock ) {
 					this.position.x = positionX;
-					for ( let i in nowBlock ) {
-						for ( let j in nowBlock[i] ) {
-							this.$set(this.worldData[i], j, this.oldWorldData[i][j] | nowBlock[i][j]);
-						}
-					}
+					this.drawWorld(nowBlock);
 				}
 			}
 		},
