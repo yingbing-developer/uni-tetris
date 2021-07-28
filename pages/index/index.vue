@@ -1,5 +1,8 @@
 <template>
 	<view class="container">
+		<!-- #ifndef H5 -->
+		<gap-bar></gap-bar>
+		<!-- #endif -->
 		<view class="top">
 			<view class="game-world">
 				<view class="line" v-for="(item, index) in worldData" :key="index">
@@ -63,9 +66,9 @@
 		<view class="control">
 			<view class="direction">
 				<view class="control-btn control-top" @tap="changeBlock"></view>
-				<view class="control-btn control-left" @tap="left"></view>
-				<view class="control-btn control-right" @tap="right"></view>
-				<view class="control-btn control-bottom" @tap="drop"></view>
+				<view class="control-btn control-left" @touchstart="leftlongpress" @touchend="left"></view>
+				<view class="control-btn control-right" @touchstart="rightlongpress" @touchend="right"></view>
+				<view class="control-btn control-bottom" @touchstart="droplongpress" @touchend="drop"></view>
 			</view>
 			<view class="circle-btn" @tap="quickDrop"></view>
 		</view>
@@ -74,6 +77,7 @@
 
 <script>
 	import Score from '@/components/score/score.vue';
+	import GapBar from '@/components/gap-bar/gap-bar.nvue';
 	import { deepClone } from '@/assets/js/utils.js';
 	import { mapGetters, mapMutations } from 'vuex';
 	//展示用方块
@@ -132,6 +136,7 @@
 			[[0,1,0],[1,1,1]],
 		]//小T
 	];
+	const moveTime = 100;
 	export default {
 		data() {
 			return {
@@ -164,6 +169,11 @@
 		},
 		created() {
 			this.init();
+			// #ifdef H5
+				document.oncontextmenu = function(e){
+					e.preventDefault();
+				};
+			// #endif
 		},
 		computed: {
 			...mapGetters(['getHiScore']),
@@ -377,20 +387,46 @@
 			},
 			//左移方块
 			left () {
+				clearInterval(this.moveTimer);
 				this.move(-1);
 			},
-			//左移方块
+			//长按左移
+			leftlongpress () {
+				this.moveTimer = setInterval(() => {
+					this.move(-1)
+				}, moveTime)
+			},
+			//右移方块
 			right () {
+				clearInterval(this.moveTimer);
 				this.move(1);
+			},
+			//长按右移
+			rightlongpress () {
+				this.moveTimer = setInterval(() => {
+					this.move(1)
+				}, moveTime)
 			},
 			//手动降落方块
 			drop () {
+				clearInterval(this.moveTimer);
 				clearTimeout(this.downTimer);
 				if ( this.position.y >= 19 ) {
 					this.next();
 				} else {
 					this.down();
 				}
+			},
+			//长按下降
+			droplongpress () {
+				this.moveTimer = setInterval(() => {
+					clearTimeout(this.downTimer);
+					if ( this.position.y >= 19 ) {
+						this.next();
+					} else {
+						this.down();
+					}
+				}, this.downTime > moveTime ? moveTime : this.downTime)
 			},
 			//快速降落方块
 			quickDrop () {
@@ -432,7 +468,8 @@
 			}
 		},
 		components: {
-			Score
+			Score,
+			GapBar
 		}
 	}
 </script>
