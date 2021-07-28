@@ -315,6 +315,7 @@
 				}
 				this.position.y++;
 				let nowBlock = this.getNowBlock(this.position.x, this.nowBlock.direction);
+				//判断方块有没有遇到阻挡
 				let isBlock = this.isBlock(nowBlock);
 				if ( isBlock ) {
 					if ( !this.isShowAll ) {
@@ -361,12 +362,17 @@
 					}, this.downTime)
 				}
 			},
-			//当方块遇到阻挡时需要进行的操作
+			//当方块停止下落时需要进行的操作
 			next () {
+				//去除满足消除条件的行
 				let worldData = this.worldData.filter(item => item.toString().replace(/,/g, '') != '1111111111');
+				//增加消除行数
 				this.lines +=( this.worldData.length - worldData.length);
+				//补全世界地图到20行
 				this.worldData = deepClone(new Array (this.worldData.length - worldData.length).fill(new Array(10).fill(0)).concat(worldData));
+				//记录当前游戏地图
 				this.oldWorldData = deepClone(this.worldData);
+				//开始下一个方块下落
 				this.startGame();
 			},
 			//左移方块
