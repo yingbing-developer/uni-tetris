@@ -223,10 +223,6 @@
 			startGame () {
 				this.ended = false;
 				this.nowBlock = this.nextBlock || this.randomBlock();
-				// this.nowBlock = {
-				// 	index: 2,
-				// 	direction: 0
-				// };
 				this.nextBlock = this.randomBlock();
 				this.nextData = this.scale2Arr(NEXTBLOCKS[this.nextBlock.index][this.nextBlock.direction]);
 				this.position = {
@@ -347,14 +343,14 @@
 					return;
 				} else if ( this.pause ) {//用户暂停游戏
 					return;
-				} else if (this.position.y == 19 || isBlock) {//方块停止，继续降落下一个方块
-					this.downTimer = setTimeout(() => {
-						let worldData = this.worldData.filter(item => item.toString().replace(/,/g, '') != '1111111111');
-						this.lines +=( this.worldData.length - worldData.length);
-						this.worldData = deepClone(new Array (this.worldData.length - worldData.length).fill(new Array(10).fill(0)).concat(worldData));
-						this.oldWorldData = deepClone(this.worldData);
-						this.startGame();
-					}, this.downTime)
+				} else if (this.position.y >= 19 || isBlock) {//方块停止，继续降落下一个方块
+					if ( !isQuick ) {
+						this.downTimer = setTimeout(() => {
+							this.next();
+						}, this.downTime)
+					} else {
+						this.next();
+					}
 				} else if ( isQuick ) {//用户选择快速降落方块
 					this.down(true);
 				} else {//默认速度降落方块
@@ -362,6 +358,14 @@
 						this.down();
 					}, this.downTime)
 				}
+			},
+			//当方块遇到阻挡时需要进行的操作
+			next () {
+				let worldData = this.worldData.filter(item => item.toString().replace(/,/g, '') != '1111111111');
+				this.lines +=( this.worldData.length - worldData.length);
+				this.worldData = deepClone(new Array (this.worldData.length - worldData.length).fill(new Array(10).fill(0)).concat(worldData));
+				this.oldWorldData = deepClone(this.worldData);
+				this.startGame();
 			},
 			//左移方块
 			left () {
@@ -373,17 +377,15 @@
 			},
 			//手动降落方块
 			drop () {
-				if ( this.position.y == 19 ) {
-					return;
-				}
 				clearTimeout(this.downTimer);
-				this.down();
+				if ( this.position.y >= 19 ) {
+					this.next();
+				} else {
+					this.down();
+				}
 			},
 			//快速降落方块
 			quickDrop () {
-				if ( this.position.y == 19 ) {
-					return;
-				}
 				clearTimeout(this.downTimer);
 				this.down(true);
 			},
@@ -394,7 +396,7 @@
 				let nowBlock = this.getNowBlock(this.position.x, direction);
 				//是否被挡住
 				let isBlock = false;
-				//判断方块移动时有没有遇到阻挡
+				//判断方块切换时有没有遇到阻挡
 				for ( let i in nowBlock ) {
 					for ( let j in nowBlock[i] ) {
 						if ( this.oldWorldData[i][j] == 1 && nowBlock[i][j] == 1 ) {
