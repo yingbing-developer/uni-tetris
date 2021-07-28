@@ -439,7 +439,6 @@
 
 <style scoped>
 @import url("../../assets/css/control.css");
-@import url("../../assets/css/score.css");
 .container {
 	display: flex;
 	flex-direction: column;
